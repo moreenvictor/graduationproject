@@ -20,7 +20,7 @@ class RecycleView(APIView):
     def post(self, request):
         user = request.user  # التأكد من استخدام request.user
         material_id = request.data.get('material_id')
-        points = request.data.get('points', 10)  # افتراضيًا 10 لو مش مبعوت
+        count = request.data.get('count', 1)  # استخدام count بدلاً من points
 
         try:
             material = Material.objects.get(id=material_id)
@@ -31,15 +31,15 @@ class RecycleView(APIView):
         profile, created = UserProfile.objects.get_or_create(user=user)
 
         # إنشاء RecycleBag جديد
-        recycle = RecycleBag.objects.create(user=user, material=material, points=points)
+        recycle = RecycleBag.objects.create(user=user, material=material, points=count)
 
         # تحديث نقاط المستخدم
-        profile.points += points
+        profile.points += count
         profile.save()
 
         # حفظ الإشعار في قاعدة البيانات
         title = "شكراً لإعادة التدوير!"
-        message = f"لقد حصلت على {points} نقطة عند إعادة تدوير {material.name}."
+        message = f"لقد حصلت على {count} نقطة عند إعادة تدوير {material.name}."
         Notification.objects.create(user=user, title=title, message=message)
 
         # إرسال إشعار عبر FCM
@@ -49,6 +49,7 @@ class RecycleView(APIView):
             'message': 'تمت إضافة العملية وحساب النقاط بنجاح',
             'current_points': profile.points
         }, status=status.HTTP_201_CREATED)
+
 
 
 class NotificationsView(APIView):

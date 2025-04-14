@@ -24,4 +24,4 @@ class NotificationSerializer(serializers.ModelSerializer):
 class RecycledItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecycledItem
-        fields = ['name', 'material', 'weight', 'date_recycled']
+        fields = ['name', 'material', 'count', 'date_recycled']  # نضيف count بدلاً من weight
