@@ -10,7 +10,7 @@ urlpatterns = [
     path('items/', ItemList.as_view(), name='items'),
     path('notifications/<int:pk>/read/', MarkNotificationAsRead.as_view(), name='mark_notification_as_read'),  # المسار هنا
     path('login/', TokenObtainPairView.as_view(), name='login'),
-     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
 
 
