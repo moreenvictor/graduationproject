@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone 
 
 class Material(models.Model):
     name = models.CharField(max_length=255)
@@ -41,8 +42,8 @@ class Notification(models.Model):
 class RecycledItem(models.Model):
     name = models.CharField(max_length=255)
     material = models.CharField(max_length=100)
-    weight = models.FloatField()  # لتخزين وزن العنصر
-    date_recycled = models.DateTimeField(auto_now_add=True)  # تاريخ إعادة التدوير
+    weight = models.FloatField()
+    date_recycled = models.DateTimeField(default=timezone.now)  # إضافة القيمة الافتراضية هنا
 
     def __str__(self):
         return f"{self.name} ({self.material})"
