@@ -112,3 +112,9 @@ urlpatterns = [
 from django.contrib import admin
 
 admin.site.register(Notification)
+
+from . import notifications
+urlpatterns = [
+    path('notifications/', notifications.get_notifications, name='notifications'),]
+
+
