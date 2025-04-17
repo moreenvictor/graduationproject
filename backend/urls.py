@@ -19,5 +19,7 @@ urlpatterns = [
 #notifications
     path('api/notifications/', notifications.get_notifications, name='get_notifications'),
     path('api/notifications/create/', notifications.create_notification, name='create_notification'),
+    path('api/recyclebags/update/<int:pk>/', update_recycle_bag, name='update_recycle_bag'),
+
   
 ]

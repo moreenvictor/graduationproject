@@ -31,8 +31,16 @@ from rest_framework import status
 
 
 # دالة لإضافة كيس تدوير
+import requests
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+
+
 @api_view(['POST'])
 def create_recycle_bag(request):
+    # البيانات التي تريد إرسالها
     material_type = request.data.get('material_type')
     count = request.data.get('count')  # استخدم count بدلاً من weight
     user = request.user  # افترضنا أنك تستخدم نظام تسجيل الدخول
@@ -40,16 +48,43 @@ def create_recycle_bag(request):
     if not material_type or count is None:  # تحقق من الحقل الجديد
         return Response({"error": "Material type and count are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # إنشاء كيس تدوير
-    recycle_bag = RecycleBag.objects.create(
-        user=user,
-        material_type=material_type,
-        count=count,  # استخدم count هنا
-    )
+    # إرسال البيانات إلى API داخلي باستخدام التوكن
+    data = {
+        "material_type": material_type,  # نوع المادة
+        "count": count  # عدد الأكياس
+    }
 
-    # إرجاع الكيس الذي تم إنشاؤه
-    serializer = RecycleBagSerializer(recycle_bag)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    # الحصول على الـ Token من الـ request أو من مكان آخر
+    token = request.headers.get('Authorization')  # إذا كان موجودًا في رأس الطلب
+
+    if not token:
+        return JsonResponse({"error": "Token is required for authentication."}, status=401)
+
+    # إضافة الـ Token إلى رأس الطلب
+    headers = {
+        'Authorization': f'Bearer {token}',
+    }
+
+    # رابط الـ API
+    url = "http://localhost:8000/api/recyclebags/create/"
+
+    # إرسال طلب POST إلى API الداخلي مع الـ Token
+    response = requests.post(url, json=data, headers=headers)
+
+    # التحقق من الاستجابة
+    if response.status_code == 201:
+        # إنشاء كيس تدوير في النظام
+        recycle_bag = RecycleBag.objects.create(
+            user=user,
+            material_type=material_type,
+            count=count,
+        )
+
+        # إرجاع الكيس الذي تم إنشاؤه
+        serializer = RecycleBagSerializer(recycle_bag)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    else:
+        return JsonResponse({"error": response.json()}, status=response.status_code)
 
 # دالة لعرض أكياس التدوير الخاصة بالمستخدم
 @api_view(['GET'])
