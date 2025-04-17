@@ -73,8 +73,7 @@ def get_notifications(request):
 def create_notification(request):
     title = request.data.get('title')
     message = request.data.get('message')
-    user = request.user  # افترضنا أنك تستخدم نظام تسجيل الدخول
-
+    user = request.user  
     if not title or not message:
         return Response({"error": "Title and message are required"}, status=status.HTTP_400_BAD_REQUEST)
     

@@ -23,9 +23,9 @@ class UserProfile(models.Model):
     user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES, default=CUSTOMER)
 
     def __str__(self):
-        return f"{self.user.username}'s Profile"
+        return f"{self.user.username} "
 
-    # تحقق من أن الملف هو صورة
+    # ensure oic
     def clean(self):
         if self.profile_picture:
             file_extension = self.profile_picture.name.split('.')[-1].lower()
