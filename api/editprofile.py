@@ -2,16 +2,10 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.contrib import admin
+from django.utils.html import format_html  # تأكد من استيراد format_html
 
 class UserProfile(models.Model):
-    CUSTOMER = 'Customer'
-    DELIVERY_BOY = 'Delivery Boy'
-
-    USER_TYPE_CHOICES = [
-        (CUSTOMER, 'Customer'),
-        (DELIVERY_BOY, 'Delivery Boy'),
-    ]
-
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100, blank=True, null=True)
@@ -20,12 +14,11 @@ class UserProfile(models.Model):
     gender = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')], blank=True, null=True)
     country = models.CharField(max_length=100, blank=True, null=True)
     birth_date = models.DateField(null=True, blank=True)
-    user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES, default=CUSTOMER)
-
+    email = models.EmailField(max_length=100, blank=True, null=True)  # إضافة حقل الإيميل
+  
     def __str__(self):
         return f"{self.user.username} "
 
-    # ensure oic
     def clean(self):
         if self.profile_picture:
             file_extension = self.profile_picture.name.split('.')[-1].lower()
@@ -35,104 +28,21 @@ class UserProfile(models.Model):
 
 # serializers.py
 from rest_framework import serializers
-from django.contrib.auth.models import User
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = '__all__'
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'email']
-
+        fields = '__all__'  # يشمل جميع الحقول بما فيها الإيميل
 
 # views.py
-from django.core.exceptions import ValidationError
-from django.core.validators import validate_email
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate
-from rest_framework.permissions import AllowAny
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def sign_up(request):
-    username = request.data.get('username')
-    email = request.data.get('email')
-    password = request.data.get('password')
-    first_name = request.data.get('first_name')
-    last_name = request.data.get('last_name')
-    phone_number = request.data.get('phone_number')
-    gender = request.data.get('gender')
-    country = request.data.get('country')
-    birth_date = request.data.get('birth_date')
-
-    if not username or not email or not password:
-        return Response({"error": "Username, email, and password are required."}, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        validate_email(email)
-    except ValidationError:
-        return Response({"error": "Invalid email format."}, status=status.HTTP_400_BAD_REQUEST)
-
-    if User.objects.filter(username=username).exists():
-        return Response({"error": "Username already exists"}, status=status.HTTP_400_BAD_REQUEST)
-
-    if len(password) < 8:
-        return Response({"error": "Password must be at least 8 characters long."}, status=status.HTTP_400_BAD_REQUEST)
-
-    user = User.objects.create_user(username=username, email=email, password=password)
-
-    try:
-        profile = UserProfile.objects.create(
-            user=user,
-            first_name=first_name,
-            last_name=last_name,
-            phone_number=phone_number,
-            gender=gender,
-            country=country,
-            birth_date=birth_date
-        )
-    except Exception as e:
-        return Response({"error": f"Error creating user profile: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    return Response({"message": "User created successfully"}, status=status.HTTP_201_CREATED)
-
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def sign_in(request):
-    username = request.data.get('username')
-    password = request.data.get('password')
-
-    user = authenticate(username=username, password=password)
-    if user is not None:
-        return Response({"message": "Login successful"}, status=status.HTTP_200_OK)
-    else:
-        return Response({"error": "Invalid username or password"}, status=status.HTTP_401_UNAUTHORIZED)
-
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def forget_password(request):
-    email = request.data.get('email')
-    new_password = request.data.get('new_password')
-
-    try:
-        user = User.objects.get(email=email)
-        user.set_password(new_password)
-        user.save()
-        return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
-    except User.DoesNotExist:
-        return Response({"error": "User with this email does not exist"}, status=status.HTTP_404_NOT_FOUND)
-
+from rest_framework.permissions import IsAuthenticated
 
 @api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])  # تأكد من أن المستخدم مسجل دخول
 def edit_profile(request):
     try:
         user_profile = UserProfile.objects.get(user=request.user)
@@ -144,6 +54,7 @@ def edit_profile(request):
         return Response(serializer.data)
 
     elif request.method == 'PUT':
+        # إضافة حقل الإيميل إلى البيانات القادمة مع الطلب
         serializer = UserProfileSerializer(user_profile, data=request.data)
         if serializer.is_valid():
             try:
@@ -153,19 +64,25 @@ def edit_profile(request):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 # urls.py
 from django.urls import path
-
 urlpatterns = [
-    path('editprofile/', edit_profile, name='edit_profile'),
-    path('signup/', sign_up, name='sign_up'),
-    path('signin/', sign_in, name='sign_in'),
-    path('forgetpassword/', forget_password, name='forget_password'),
+    path('editprofile/', edit_profile, name='edit_profile'),  # صفحة تعديل الملف الشخصي فقط
 ]
-
 
 # admin.py
 from django.contrib import admin
 
-admin.site.register(UserProfile)
+
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'first_name', 'last_name', 'phone_number', 'email', 'view_api_link')  # إضافة العمود الجديد
+
+    def view_api_link(self, obj):
+        # إضافة رابط API الخاص بتعديل الملف الشخصي
+        url = f'http://localhost:8000/api/editprofile/'
+        return format_html(f'<a href="{url}" target="_blank">View API</a>')  # يفتح الرابط في نافذة جديدة
+    
+    view_api_link.short_description = 'API Link'  # تغيير اسم العمود في الواجهة
+
+# تسجيل النموذج في لوحة الإدارة
+admin.site.register(UserProfile, UserProfileAdmin)

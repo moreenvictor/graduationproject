@@ -1,4 +1,5 @@
 # settings.py
+import os
 
 from pathlib import Path
 from datetime import timedelta
@@ -24,6 +25,10 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
 ]
+
+TWILIO_ACCOUNT_SID = 'your_account_sid'  # استبدلها بالـ SID الخاص بحسابك
+TWILIO_AUTH_TOKEN = 'your_auth_token'    # استبدلها بالتوكن الخاص بحسابك
+TWILIO_PHONE_NUMBER = 'your_twilio_phone_number' 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -65,15 +70,15 @@ ROOT_URLCONF = 'backend.urls'
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "api/templates"],  
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.debug",
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # تأكد من وجود المجلد 'templates'
+        'APP_DIRS': True,  # هذا يعين تفعيل دعم القوالب الخاصة بكل تطبيق
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
             ],
         },
     },
